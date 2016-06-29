@@ -1,0 +1,21 @@
+{
+  "name": "nichenimbleCronjob",
+  "description": "Exclisive Hire Instantly",
+  "version": "0.0.1",
+  "private": true,
+  "author": "NicheNimble",
+  "license": "NicheNimble",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NicheNimbleCron.git"
+  },
+  "engines": {
+    "node": ">=0.10.28",
+    "npm": ">=1.4.28"
+  },
+  "dependencies": {
+    "chokidar": "^1.6.0",
+    "google-auth-library": "^0.9.8",
+    "googleapis": "^9.0.0"
+  }
+}
