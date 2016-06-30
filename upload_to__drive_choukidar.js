@@ -8,6 +8,7 @@ var log = console.log.bind(console);
 var oauth2Client;
 var SCOPES = ['https://www.googleapis.com/auth/drive','https://www.googleapis.com/auth/drive','https://www.googleapis.com/auth/drive'];
 var TOKEN_PATH ='drive-nodejs-quickstart.json';
+var allowed_file_type=['doc','docx','pdf'];
 
 var watcher = chokidar.watch('./documents/', {ignored: /[\/\\]\./, persistent: true,ignoreInitial: true});
 
@@ -37,6 +38,7 @@ function authorize(credentials) {
     try {
         var token=fs.readFileSync(TOKEN_PATH);
         oauth2Client.credentials = JSON.parse(token);
+        console.log('everything is alright.. now watching');
 
 
     }
@@ -44,18 +46,28 @@ function authorize(credentials) {
   {
       console.log('getting new token');
       getNewToken(oauth2Client);
+      console.log('everything is alright.. now watching');
 
 
   }
 
 }
+
+
+
 watcher
     .on('add',function (path) {
         
         log('File', path, 'has been added');
         var file_name=path.slice(10);
         var file_extension=path.split('.')[1];
-        createfiles(oauth2Client,file_name,file_extension)
+        if(allowed_file_type.indexOf(file_extension)==-1)
+            console.log('file of type '+file_extension+' is not allowed');
+        else 
+        {
+            createfiles(oauth2Client,file_name,file_extension)
+
+        }
         
     })
     .on('change', function (path) {
@@ -66,8 +78,13 @@ watcher
         log('File', path, 'has been deleted');
         var file_name=path.slice(10);
         var file_extension=path.split('.')[1];
-        deletefile(oauth2Client,file_name,file_extension);
+        if(allowed_file_type.indexOf(file_extension)==-1)
+            console.log('file of type '+file_extension+' could not be deleted because it was previously prevented from getting uploaded');
+        else
+        {
+            createfiles(oauth2Client,file_name,file_extension)
 
+        }
     })
 .on('error',function (error) {
     log('Watcher error: ${error}')});
@@ -102,13 +119,7 @@ function storeToken(token) {
 
 function createfiles(auth,file_name,file_extension) {
     var drive = google.drive({ version: 'v3', auth: auth });
-    var mimeType;
-    if(file_extension==='doc')
-        mimeType='application/msword';
-    else if(file_extension==='docx')
-        mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    else if(file_extension==='pdf')
-        mimeType='application/pdf';
+    var mimeType=getMimeType(file_extension);
     drive.files.create({
         auth: auth,resource: {
             name: file_name,
@@ -133,15 +144,8 @@ function createfiles(auth,file_name,file_extension) {
 
 
 function deletefile(auth,file_name,file_extension) {
-    var mimeType;
-    if(file_extension==='doc')
-        mimeType='application/msword';
-    else if(file_extension==='docx')
-        mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    else if(file_extension==='pdf')
-        mimeType='application/pdf';
     var drive = google.drive({ version: 'v3', auth: auth });
-    file_name=file_name;
+    var mimeType=getMimeType(file_extension);
     drive.files.list({
         auth: auth,
         q:"name contains \'"+file_name+"\'"+"and mimeType=\'"+mimeType+"\'"
@@ -184,4 +188,17 @@ function deletefile(auth,file_name,file_extension) {
             }
         }
     });
+}
+
+
+function getMimeType(file_extension)
+{
+    var mimeType="";
+    if(file_extension==='doc')
+        mimeType='application/msword';
+    else if(file_extension==='docx')
+        mimeType='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    else if(file_extension==='pdf')
+        mimeType='application/pdf';
+    return mimeType;
 }
